@@ -1,13 +1,71 @@
 from typing import Any
 from fastapi import FastAPI, Response, status, HTTPException
 from random import randrange
+from typing import Optional
+from pydantic import BaseModel
 
-from schemas import CreatePost, Post
+# from schemas import CreatePost, Post
 
-from databases import my_posts
-from services import find_post
+# from databases import my_posts
+# from services import find_post
 
 app = FastAPI()
+
+my_posts = [
+    {
+        "id": 1,
+        "title": "string",
+        "content": "string",
+        "published": True,
+        "rating": 0
+    },
+    {
+        "id": 2,
+        "title": "string",
+        "content": "string",
+        "published": True,
+        "rating": 0
+    },
+    {
+        "id": 3,
+        "title": "string",
+        "content": "string",
+        "published": True,
+        "rating": 0
+    },
+    {
+        "id": 4,
+        "title": "string",
+        "content": "string",
+        "published": True,
+        "rating": 0
+    },
+
+]
+
+
+def find_post(id) -> int:
+    for index, post in enumerate(my_posts):
+        if post['id'] == id:
+            return post
+        return None
+
+
+
+class Post(BaseModel):
+    id: int
+    title: str
+    content: str
+    published: bool = True
+    rating: Optional[int] = None
+
+
+class CreatePost(BaseModel):
+    title: str
+    content: str
+    published: bool = True
+    rating: Optional[int] = None
+
 
 
 @app.get('/posts/latest')
