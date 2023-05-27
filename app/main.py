@@ -1,35 +1,31 @@
 from typing import Any
 from fastapi import FastAPI, Response, status, HTTPException
-from random import randrange
-from typing import Optional
-from pydantic import BaseModel
-
-from schemas import CreatePost, Post
-
-from databases import my_posts
-from services import find_post
+import psycopg2
+from psycopg2.extras import RealDictCursor
+from schemas import CreatePost
+import time
+from decouple import config
 
 app = FastAPI()
 
-
-class Post(BaseModel):
-    id: int
-    title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
-
-
-class CreatePost(BaseModel):
-    title: str
-    content: str
-    published: bool = True
-    rating: Optional[int] = None
+while True:
+    try:
+        conn = psycopg2.connect(
+            host=config('DATABASE_HOST'), database=config('DATABASE_NAME'), user=config('DATABASE_USER'), password=config('DATABASE_PASSWORD'), cursor_factory=RealDictCursor)
+        cursor = conn.cursor()
+        print('Database connection was successful')
+        break
+    except Exception as e:
+        print('Connection to database failed')
+        print('ERROR:', str(e))
+        time.sleep(2)
 
 
 @app.get('/api/v1/posts/latest')
 def latest_posts():
-    latest_posts = my_posts[len(my_posts)-1]
+    cursor.execute('SELECT * FROM post')
+    posts = cursor.fetchall()
+    latest_posts = posts[len(posts)-1]
     return {
         'status': True,
         'message': 'Latest posts',
@@ -39,7 +35,8 @@ def latest_posts():
 
 @app.get('/api/v1/posts', status_code=status.HTTP_200_OK)
 async def posts():
-    posts = my_posts
+    cursor.execute('SELECT * FROM post')
+    posts = cursor.fetchall()
     return {
         'status': True,
         'message': 'Posts',
@@ -49,7 +46,8 @@ async def posts():
 
 @app.get('/api/v1/posts/{post_id}', status_code=status.HTTP_200_OK)
 async def post_detail(post_id: int, response: Response):
-    post = find_post(post_id)
+    cursor.execute('SELECT * FROM post WHERE id = %s', (str(post_id)))
+    post = cursor.fetchone()
     if not post:
         raise HTTPException(
             status_code=status.HTTP_404_NOT_FOUND, detail='Post not found')
@@ -62,11 +60,22 @@ async def post_detail(post_id: int, response: Response):
 
 @app.post('/api/v1/posts', status_code=status.HTTP_201_CREATED)
 def create_post(post: CreatePost) -> Any:
-    post_dict = post.dict()
-    post_dict['id'] = randrange(0, 10000000)
-    my_posts.append(post_dict)
+    cursor.execute('INSERT INTO post(title,content,published) VALUES(%s,%s,%s) RETURNING *',
+                   (post.title, post.content, post.published))
+    post = cursor.fetchone()
+    conn.commit()
     return {
         'status': True,
         'message': 'Post created successfully',
-        'data': post_dict
+        'data': post
+    }
+
+
+@app.delete('/api/v1/posts/{post_id}', status_code=status.HTTP_204_NO_CONTENT)
+async def delete_post(post_id: int, response=Response):
+    cursor.execute('DELETE FROM post where id = %s', (str(post_id)))
+    conn.commit()
+    return {
+        'status': True,
+        'message': 'Post deleted successfully'
     }
