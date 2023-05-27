@@ -4,52 +4,12 @@ from random import randrange
 from typing import Optional
 from pydantic import BaseModel
 
-# from schemas import CreatePost, Post
+from schemas import CreatePost, Post
 
-# from databases import my_posts
-# from services import find_post
+from databases import my_posts
+from services import find_post
 
 app = FastAPI()
-
-my_posts = [
-    {
-        "id": 1,
-        "title": "string",
-        "content": "string",
-        "published": True,
-        "rating": 0
-    },
-    {
-        "id": 2,
-        "title": "string",
-        "content": "string",
-        "published": True,
-        "rating": 0
-    },
-    {
-        "id": 3,
-        "title": "string",
-        "content": "string",
-        "published": True,
-        "rating": 0
-    },
-    {
-        "id": 4,
-        "title": "string",
-        "content": "string",
-        "published": True,
-        "rating": 0
-    },
-
-]
-
-
-def find_post(id) -> int:
-    for index, post in enumerate(my_posts):
-        if post['id'] == id:
-            return post
-        return None
-
 
 
 class Post(BaseModel):
@@ -67,8 +27,7 @@ class CreatePost(BaseModel):
     rating: Optional[int] = None
 
 
-
-@app.get('/posts/latest')
+@app.get('/api/v1/posts/latest')
 def latest_posts():
     latest_posts = my_posts[len(my_posts)-1]
     return {
@@ -78,7 +37,7 @@ def latest_posts():
     }
 
 
-@app.get('/posts', status_code=status.HTTP_200_OK)
+@app.get('/api/v1/posts', status_code=status.HTTP_200_OK)
 async def posts():
     posts = my_posts
     return {
@@ -88,7 +47,7 @@ async def posts():
     }
 
 
-@app.get('/posts/{post_id}', status_code=status.HTTP_200_OK)
+@app.get('/api/v1/posts/{post_id}', status_code=status.HTTP_200_OK)
 async def post_detail(post_id: int, response: Response):
     post = find_post(post_id)
     if not post:
@@ -101,7 +60,7 @@ async def post_detail(post_id: int, response: Response):
     }
 
 
-@app.post('/posts', status_code=status.HTTP_201_CREATED)
+@app.post('/api/v1/posts', status_code=status.HTTP_201_CREATED)
 def create_post(post: CreatePost) -> Any:
     post_dict = post.dict()
     post_dict['id'] = randrange(0, 10000000)
