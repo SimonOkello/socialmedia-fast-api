@@ -17,10 +17,10 @@ def get_users(db: Session):
 #     return db.query(Post).filter(Post.id == post_id)
 
 
-def create_user(db: Session, user: UserCreate):
-    hashed_password = hash_password(user.password)
+def create_user(db: Session, request_data: UserCreate):
+    hashed_password = hash_password(request_data.password)
     user = User(
-        email=user.email, password=hashed_password)
+        email=request_data.email, password=hashed_password)
     db.add(user)
     db.commit()
     db.refresh(user)
