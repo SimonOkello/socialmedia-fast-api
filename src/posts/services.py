@@ -17,9 +17,9 @@ def query_post(db: Session, post_id: int):
     return db.query(Post).filter(Post.id == post_id)
 
 
-def create_post(db: Session, post: CreatePost):
+def create_post(db: Session, request: CreatePost):
     post = Post(
-        title=post.title, content=post.content, published=post.published)
+        title=request.title, content=request.content, published=request.published)
     db.add(post)
     db.commit()
     db.refresh(post)

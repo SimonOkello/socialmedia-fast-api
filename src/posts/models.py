@@ -5,7 +5,7 @@ from sqlalchemy.sql.expression import text
 
 
 class Post(Base):
-    __tablename__ = 'post'
+    __tablename__ = 'posts'
 
     id = Column(Integer, primary_key=True, nullable=False)
     title = Column(String, nullable=False)

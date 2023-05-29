@@ -1,24 +1,27 @@
 from sqlalchemy.orm import Session
 
-from . models import Post
-from .schemas import CreatePost
+from src.users.utils import hash_password
+
+from . models import User
+from .schemas import UserCreate
 
 
-def get_posts(db: Session):
-    return db.query(Post).all()
+def get_users(db: Session):
+    return db.query(User).all()
 
 
-def get_post(db: Session, post_id: int):
-    return db.query(Post).filter(Post.id == post_id).first()
+# def get_post(db: Session, post_id: int):
+#     return db.query(Post).filter(Post.id == post_id).first()
 
-def query_post(db: Session, post_id: int):
-    return db.query(Post).filter(Post.id == post_id)
+# def query_post(db: Session, post_id: int):
+#     return db.query(Post).filter(Post.id == post_id)
 
 
-def create_post(db: Session, post: CreatePost):
-    post = Post(
-        title=post.title, content=post.content, published=post.published)
-    db.add(post)
+def create_user(db: Session, user: UserCreate):
+    hashed_password = hash_password(user.password)
+    user = User(
+        email=user.email, password=hashed_password)
+    db.add(user)
     db.commit()
-    db.refresh(post)
-    return post
+    db.refresh(user)
+    return user

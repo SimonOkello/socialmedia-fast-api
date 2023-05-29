@@ -3,9 +3,11 @@ from fastapi import Depends, FastAPI, status, HTTPException, Response, APIRouter
 from sqlalchemy.orm import Session
 from src.posts import services
 
-from src.posts.schemas import CreatePost, Post
+from src.posts import schemas
 from .models import Base
 from src.database import engine, get_db
+
+from src.posts import models
 
 
 Base.metadata.create_all(bind=engine)
@@ -17,17 +19,20 @@ router = APIRouter(prefix="/api/v1/posts",
 @router.get('/latest')
 def latest_posts(db: Session = Depends(get_db)):
     posts = services.get_posts(db)
-    latest_posts = posts[len(posts)-1]
+    if len(posts) > 0:
+        latest_posts = posts[len(posts)-1]
+    else:
+        latest_posts = {}
     return latest_posts
 
 
-@router.get('/', status_code=status.HTTP_200_OK, response_model=List[Post])
+@router.get('/', status_code=status.HTTP_200_OK, response_model=List[schemas.Post])
 def posts(db: Session = Depends(get_db)):
     posts = services.get_posts(db)
     return posts
 
 
-@router.get('/{post_id}', status_code=status.HTTP_200_OK, response_model=Post)
+@router.get('/{post_id}', status_code=status.HTTP_200_OK, response_model=schemas.Post)
 def post_detail(post_id: int, db: Session = Depends(get_db)):
     post = services.get_post(db, post_id=post_id)
     if post is None:
@@ -36,14 +41,19 @@ def post_detail(post_id: int, db: Session = Depends(get_db)):
     return post
 
 
-@router.post('/', status_code=status.HTTP_201_CREATED, response_model=Post)
-def create_post(post: CreatePost, db: Session = Depends(get_db)):
-    post = services.create_post(db, post)
+@router.post('/', status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
+def create_post(request: schemas.CreatePost, db: Session = Depends(get_db)):
+    # post = db.query(models.Post).filter(models.Post.title == request.title)
+    # print('POST:', post)
+    # if db.query(post.exists()):
+    #     raise HTTPException(status_code=status.HTTP_400_BAD_REQUEST,
+    #                         detail='Post with this title alredy exists')
+    post = services.create_post(db, request)
     return post
 
 
-@router.put('/{post_id}', status_code=status.HTTP_200_OK, response_model=Post)
-def update_post(post_id: int, updated_post: CreatePost, db: Session = Depends(get_db)):
+@router.put('/{post_id}', status_code=status.HTTP_200_OK, response_model=schemas.Post)
+def update_post(post_id: int, updated_post: schemas.CreatePost, db: Session = Depends(get_db)):
     post_query = services.query_post(db, post_id)
     post = post_query.first()
     if post is None:
