@@ -9,11 +9,13 @@ from fastapi.security import OAuth2PasswordBearer
 from src.authentication.schemas import TokenData
 from src.database import get_db
 from src.users import models
+from src.users.schemas import User
 
 password_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
 oauth2_scheme = OAuth2PasswordBearer(tokenUrl="token")
 
 secret_key = config('SECRET_KEY')
+ALGORITHM = "HS256"
 
 
 def get_user_by_id(db: Session, user_id: int):
@@ -34,7 +36,7 @@ def create_access_token(data: dict):
     to_encode = data.copy()
     expire = datetime.utcnow() + timedelta(minutes=expires_delta)
     to_encode.update({"exp": expire})
-    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm="HS256")
+    encoded_jwt = jwt.encode(to_encode, secret_key, algorithm=ALGORITHM)
     return encoded_jwt
 
 
@@ -50,6 +52,19 @@ def verify_access_token(token: str, credentials_exception):
     return token_data
 
 
+def token_is_valid(token: str, credentials_exception):
+    try:
+        payload = jwt.decode(token, secret_key, algorithms='H256')
+        expiration_time: datetime = payload.get('exp')
+        if expiration_time is None:
+            raise credentials_exception
+        if datetime.utcnow() > expiration_time:
+            return False
+        return True
+    except JWTError:
+        raise credentials_exception
+
+
 def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(get_db)):
     try:
         credentials_exception = HTTPException(
@@ -57,7 +72,7 @@ def get_current_user(token: str = Depends(oauth2_scheme), db: Session = Depends(
             detail="Could not validate credentials",
             headers={"WWW-Authenticate": "Bearer"},
         )
-        payload = jwt.decode(token, secret_key, algorithms='H256')
+        payload = jwt.decode(token, secret_key, algorithms=[ALGORITHM])
         user_id: str = payload.get('user_id')
         if user_id is None:
             raise credentials_exception
