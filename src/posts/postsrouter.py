@@ -15,11 +15,11 @@ from src.posts import models
 Base.metadata.create_all(bind=engine)
 
 router = APIRouter(prefix="/api/v1/posts",
-                   tags=["Posts"],)
+                   tags=["Posts"], dependencies=[Depends(get_current_user)],)
 
 
 @router.get('/latest')
-def latest_posts(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def latest_posts(db: Session = Depends(get_db)):
     posts = services.get_posts(db)
     if len(posts) > 0:
         latest_posts = posts[len(posts)-1]
@@ -29,13 +29,13 @@ def latest_posts(db: Session = Depends(get_db), user=Depends(get_current_user)):
 
 
 @router.get('/', status_code=status.HTTP_200_OK, response_model=List[schemas.Post])
-def posts(db: Session = Depends(get_db), user=Depends(get_current_user)):
+def posts(db: Session = Depends(get_db)):
     posts = services.get_posts(db)
     return posts
 
 
 @router.get('/{post_id}', status_code=status.HTTP_200_OK, response_model=schemas.Post)
-def post_detail(post_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def post_detail(post_id: int, db: Session = Depends(get_db),):
     post = services.get_post(db, post_id=post_id)
     if post is None:
         raise HTTPException(
@@ -44,7 +44,7 @@ def post_detail(post_id: int, db: Session = Depends(get_db), user=Depends(get_cu
 
 
 @router.post('/', status_code=status.HTTP_201_CREATED, response_model=schemas.Post)
-def create_post(request: schemas.CreatePost, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def create_post(request: schemas.CreatePost, db: Session = Depends(get_db)):
     # post = db.query(models.Post).filter(models.Post.title == request.title)
     # print('POST:', post)
     # if db.query(post.exists()):
@@ -55,7 +55,7 @@ def create_post(request: schemas.CreatePost, db: Session = Depends(get_db), user
 
 
 @router.put('/{post_id}', status_code=status.HTTP_200_OK, response_model=schemas.Post)
-def update_post(post_id: int, updated_post: schemas.CreatePost, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def update_post(post_id: int, updated_post: schemas.CreatePost, db: Session = Depends(get_db)):
     post_query = services.query_post(db, post_id)
     post = post_query.first()
     if post is None:
@@ -67,7 +67,7 @@ def update_post(post_id: int, updated_post: schemas.CreatePost, db: Session = De
 
 
 @router.delete('/{post_id}', status_code=status.HTTP_204_NO_CONTENT)
-def delete_post(post_id: int, db: Session = Depends(get_db), user=Depends(get_current_user)):
+def delete_post(post_id: int, db: Session = Depends(get_db)):
     post_query = services.query_post(db, post_id)
     post = post_query.first()
     if post is None:

@@ -19,7 +19,7 @@ def query_post(db: Session, post_id: int):
 
 def create_post(db: Session, request: CreatePost):
     post = Post(
-        title=request.title, content=request.content, published=request.published)
+        title=request.title, content=request.content, published=request.published,)
     db.add(post)
     db.commit()
     db.refresh(post)
