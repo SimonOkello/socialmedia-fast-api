@@ -1,16 +1,15 @@
-from datetime import datetime
+import email
 from pydantic import BaseModel, EmailStr
 
 
-class User(BaseModel):
-    id: int
+class AuthUser(BaseModel):
     email: EmailStr
-    date_created: datetime
+    access_token: str
 
     class Config:
         orm_mode = True
 
 
-class UserCreate(BaseModel):
+class UserLogin(BaseModel):
     email: EmailStr
     password: str
